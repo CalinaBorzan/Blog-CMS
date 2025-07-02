@@ -44,9 +44,43 @@ class PostResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('title')->required(),
-                Forms\Components\RichEditor::make('content')->required(),
-                Forms\Components\Placeholder::make('author_name')->label('Author')->content(fn(?Post $record)=> $record->user->name ?? 'Unknown'),
+                Forms\Components\TextInput::make('title')
+                    ->required(),
+
+                Forms\Components\RichEditor::make('content')
+                    ->required(),
+
+                Forms\Components\Placeholder::make('author_name')
+                    ->label('Author')
+                    ->content(fn(?Post $record)=> $record->user->name ?? 'Unknown'),
+
+                Forms\Components\Select::make('category_id')
+                    ->label('Category')
+                    ->relationship('category', 'name')
+                    ->required()
+                    ->searchable()
+                    ->createOptionForm([
+                        Forms\Components\TextInput::make('name')
+                            ->required()
+                            ->maxLength(255),
+
+
+                        ]
+                    ),
+
+
+                Forms\Components\MultiSelect::make('tags')
+                    ->label('Tags')
+                    ->required()
+                    ->relationship('tags', 'name')
+                    ->searchable()
+                    ->createOptionForm([
+                            Forms\Components\TextInput::make('name')
+                                ->required()
+                                ->maxLength(255),
+
+                        ]
+                    ),
 
             ]);
     }
@@ -58,9 +92,11 @@ class PostResource extends Resource
                 Tables\Columns\TextColumn::make('title')->label('Title')->searchable(),
                 Tables\Columns\TextColumn::make('created_at')->label('Created At')->dateTime(),
                 Tables\Columns\TextColumn::make('user.name')->label('Author'),
+                Tables\Columns\TextColumn::make('category.name')->label('Category')->searchable(),
             ])
             ->filters([
-                //
+                Tables\Filters\SelectFilter::make('category_id')->label('Category')->relationship('category', 'name'),
+                Tables\Filters\MultiSelectFilter::make('tags')->label('Tags')->relationship('tags', 'name'),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
