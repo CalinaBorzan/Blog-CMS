@@ -9,6 +9,19 @@ use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
+    const ROLE_ADMIN='admin';
+    const ROLE_EDITOR='editor';
+
+    public function isAdmin(): bool
+    {
+        return $this->role==self::ROLE_ADMIN;
+    }
+
+    public function isEditor(): bool
+    {
+        return $this->role==self::ROLE_EDITOR;
+    }
+
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable;
 
@@ -21,6 +34,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'role',
     ];
 
     /**
