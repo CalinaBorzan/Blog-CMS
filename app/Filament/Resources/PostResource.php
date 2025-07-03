@@ -72,6 +72,10 @@ class PostResource extends Resource
                         Forms\Components\MultiSelect::make('tags')
                             ->label('Tags')
                             ->required()
+                            ->nestedRecursiveRules([
+                            'min:3',
+                            'max:255',
+                        ])
                             ->unique(table: 'tags', column: 'name')
                             ->relationship('tags', 'name')
                             ->createOptionForm([
@@ -83,7 +87,7 @@ class PostResource extends Resource
                     ]),
 
                 Forms\Components\RichEditor::make('content')
-                    ->maxLength(255)
+
                     ->required(),
 
                 Forms\Components\Placeholder::make('author_name')

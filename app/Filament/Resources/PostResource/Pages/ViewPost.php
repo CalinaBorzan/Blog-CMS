@@ -15,55 +15,36 @@ class ViewPost extends ViewRecord
 {
     protected static string $resource = PostResource::class;
 
+    protected string $localBaseUrl = 'http://127.0.0.1:8000';
 
-    protected function fixLocalhostUrls(string $content): string
+    protected function fixUrlsAndConvertImages(string $content): string
     {
-        \Log::info('Before fixLocalhostUrls:', ['content' => $content]);
-
-        $result = preg_replace_callback(
-            '/(href|src)="http:\/\/localhost(:\d+)?(\/[^"]*)"/i',
-            function ($matches) {
-                return $matches[1] . '="http://127.0.0.1:8000' . $matches[3] . '"';
-            },
-            $content
-        );
-
-        \Log::info('After fixLocalhostUrls:', ['result' => $result]);
-
-        return $result;
-    }
-
-
-    protected function convertAttachmentsToImages(string $content): string
-    {
-        logger('convertAttachmentsToImages called', ['content' => $content]);
-        return preg_replace_callback(
+        $content = preg_replace_callback(
             '/<a[^>]+href="([^"]+\.(?:jpg|jpeg|png|gif|webp))"[^>]*>.*?<\/a>/i',
             function ($matches) {
-                logger('Processing image URL', ['url' => $matches[1]]);
-
                 $url = $matches[1];
                 $parsed = parse_url($url);
-                if ($parsed === false) {
-                    return '<img src="' . e($url) . '" alt="Image" style="max-width:100%; height:auto;" />';
+                if ($parsed && isset($parsed['host']) && $parsed['host'] === 'localhost') {
+                    $url = $this->localBaseUrl . ($parsed['path'] ?? '');
                 }
-
-                if (isset($parsed['host']) && $parsed['host'] === 'localhost') {
-                    $newUrl = 'http://127.0.0.1:8000' . ($parsed['path'] ?? '');
-                    logger('Replaced localhost with 127.0.0.1', ['newUrl' => $newUrl]);
-                    return '<img src="' . e($newUrl) . '" alt="Image" style="max-width:100%; height:auto;" />';
-                }
-
                 return '<img src="' . e($url) . '" alt="Image" style="max-width:100%; height:auto;" />';
             },
             $content
         );
+
+        $content = preg_replace_callback(
+            '/(href|src)="http:\/\/localhost(:\d+)?(\/[^"]*)"/i',
+            fn($matches) => $matches[1] . '="' . $this->localBaseUrl . $matches[3] . '"',
+            $content
+        );
+
+        return $content;
     }
+
 
 
     protected function getFormSchema(): array
     {
-        \Log::info('>>> getViewSchema() called');
 
         return [
             Section::make('Post Details')
@@ -120,7 +101,7 @@ class ViewPost extends ViewRecord
                         ->label(false)
                         ->content(fn($record) => new HtmlString(
                             '<div style="font-size: 1.125rem; line-height: 1.6;">' .
-                            $this->convertAttachmentsToImages($this->fixLocalhostUrls($record->content)) .
+                            $this->fixUrlsAndConvertImages($record->content) .
                             '</div>'
                         )),
                 ])
