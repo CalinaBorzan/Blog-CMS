@@ -40,6 +40,11 @@ class PostResource extends Resource
         return auth()->user()->can('delete', $record);
     }
 
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()->with(['user','category','tags']);
+    }
+
     public static function form(Form $form): Form
     {
         return $form
@@ -100,6 +105,7 @@ class PostResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\ViewAction::make(),
             ])
             ->actions([
                     Tables\Actions\DeleteAction::make(),
@@ -121,6 +127,7 @@ class PostResource extends Resource
             'index' => Pages\ListPosts::route('/'),
             'create' => Pages\CreatePost::route('/create'),
             'edit' => Pages\EditPost::route('/{record}/edit'),
+            'view'=>Pages\ViewPost::route('/{record}'),
         ];
     }
 }

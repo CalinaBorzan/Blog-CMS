@@ -14,9 +14,11 @@ class UserPostsWidget extends ChartWidget
     protected function getData(): array
     {
 
-        $data=Trend::model(Post::class)
+        $userId=auth()->id();
+
+        $data=Trend::query(Post::query()->where('user_id',$userId))
             ->between(now()->subDays(30), now())
-            ->perMonth()
+            ->perDay()
             ->count();
 
         return [
