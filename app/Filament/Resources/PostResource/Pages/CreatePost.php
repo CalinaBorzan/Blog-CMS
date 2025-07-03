@@ -1,10 +1,12 @@
 <?php
 
 namespace App\Filament\Resources\PostResource\Pages;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 
 use App\Filament\Resources\PostResource;
 use Filament\Resources\Pages\CreateRecord;
+use League\Csv\Query\QueryException;
 
 class CreatePost extends CreateRecord
 {

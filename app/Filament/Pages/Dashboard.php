@@ -9,7 +9,7 @@ use Filament\Pages\Page;
 
 class Dashboard extends BaseDashboard
 {
-    protected static ?string $navigationIcon = 'heroicon-o-document-text';
+    protected static ?string $navigationIcon = 'heroicon-o-home';
 
     protected static string $view = 'filament.pages.dashboard';
 
@@ -18,8 +18,12 @@ class Dashboard extends BaseDashboard
 {
     return [
         \App\Filament\Widgets\UserPostsWidget::class,
+        \App\Filament\Widgets\TopTagsChart::class,
+
     ];
 }
+
+
 
     public function mount(): void
     {

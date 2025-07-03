@@ -1,8 +1,10 @@
 <?php
 
 namespace App\Filament\Resources;
+use Filament\Forms\Components\Grid;
 use Illuminate\Database\Eloquent\Model;
 
+use App\Models\Category;
 use App\Filament\Resources\PostResource\Pages;
 use App\Filament\Resources\PostResource\RelationManagers;
 use App\Models\Post;
@@ -13,11 +15,12 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use PHPUnit\Util\Filter;
 
 class PostResource extends Resource
 {
     protected static ?string $model = Post::class;
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-pencil';
 
 
     public static function canViewAny(): bool
@@ -50,43 +53,42 @@ class PostResource extends Resource
         return $form
             ->schema([
                 Forms\Components\TextInput::make('title')
+                    ->maxLength(20)
                     ->required(),
 
+                Grid::make(2)
+                    ->schema([
+                        Forms\Components\Select::make('category_id')
+                            ->label('Category')
+                            ->relationship('category', 'name')
+                            ->required()
+                            ->createOptionForm([
+                                Forms\Components\TextInput::make('name')
+                                    ->required()
+                                    ->maxLength(20)
+                                    ->unique(table: 'categories', column: 'name', ignoreRecord: true),
+                            ]),
+
+                        Forms\Components\MultiSelect::make('tags')
+                            ->label('Tags')
+                            ->required()
+                            ->unique(table: 'tags', column: 'name')
+                            ->relationship('tags', 'name')
+                            ->createOptionForm([
+                                Forms\Components\TextInput::make('name')
+                                    ->required()
+                                    ->unique(table: 'tags', column: 'name', ignoreRecord: true)
+                                    ->maxLength(20),
+                            ]),
+                    ]),
+
                 Forms\Components\RichEditor::make('content')
+                    ->maxLength(255)
                     ->required(),
 
                 Forms\Components\Placeholder::make('author_name')
                     ->label('Author')
-                    ->content(fn(?Post $record)=> $record->user->name ?? 'Unknown'),
-
-                Forms\Components\Select::make('category_id')
-                    ->label('Category')
-                    ->relationship('category', 'name')
-                    ->required()
-                    ->searchable()
-                    ->createOptionForm([
-                        Forms\Components\TextInput::make('name')
-                            ->required()
-                            ->maxLength(255),
-
-
-                        ]
-                    ),
-
-
-                Forms\Components\MultiSelect::make('tags')
-                    ->label('Tags')
-                    ->required()
-                    ->relationship('tags', 'name')
-                    ->searchable()
-                    ->createOptionForm([
-                            Forms\Components\TextInput::make('name')
-                                ->required()
-                                ->maxLength(255),
-
-                        ]
-                    ),
-
+                    ->content(fn(?Post $record) => $record->user->name ?? 'Unknown'),
             ]);
     }
 
@@ -94,22 +96,29 @@ class PostResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('title')->label('Title')->searchable(),
+                Tables\Columns\TextColumn::make('title')->label('Title') ->searchable(),
                 Tables\Columns\TextColumn::make('created_at')->label('Created At')->dateTime(),
-                Tables\Columns\TextColumn::make('user.name')->label('Author'),
-                Tables\Columns\TextColumn::make('category.name')->label('Category')->searchable(),
+                Tables\Columns\TextColumn::make('user.name')->label('Author')->searchable(),
+                Tables\Columns\TextColumn::make('category.name')->label('Category')
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('category_id')->label('Category')->relationship('category', 'name'),
                 Tables\Filters\MultiSelectFilter::make('tags')->label('Tags')->relationship('tags', 'name'),
+                Tables\Filters\Filter::make('my_posts')
+                ->label('My Posts')
+                ->query(fn(Builder $query):Builder =>
+                         $query->where('user_id',auth()->id())
+                )
+                ->toggle()
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\ViewAction::make(),
-            ])
-            ->actions([
-                    Tables\Actions\DeleteAction::make(),
+                Tables\Actions\EditAction::make()
+                    ->visible(fn (Post $record): bool => auth()->user()->can('update', $record)),
 
+                Tables\Actions\ViewAction::make(),
+
+                Tables\Actions\DeleteAction::make()
+                    ->visible(fn (Post $record): bool => auth()->user()->can('delete', $record)),
             ]);
 
     }
@@ -122,7 +131,8 @@ class PostResource extends Resource
     }
 
     public static function getPages(): array
-    {
+    {    \Log::info('PostResource getPages called', ['pages' => ['view' => Pages\ViewPost::class]]);
+
         return [
             'index' => Pages\ListPosts::route('/'),
             'create' => Pages\CreatePost::route('/create'),
