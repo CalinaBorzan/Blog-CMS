@@ -1,27 +1,24 @@
 <?php
 
-namespace App\Filament\Resources\PostResource\Pages;
+namespace App\Filament\Resources\DraftPostResource\Pages;
 
-use Illuminate\Support\Facades\Auth;
-
-use App\Filament\Resources\PostResource;
+use App\Filament\Resources\DraftPostResource;
 use Filament\Resources\Pages\CreateRecord;
 
-
-class CreatePost extends CreateRecord
+class CreateDraftPost extends CreateRecord
 {
-    protected static string $resource = PostResource::class;
+    protected static string $resource = DraftPostResource::class;
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        $data['user_id'] = Auth::id();
+
+        $data['user_id'] = auth()->id();
         return $data;
     }
+
 
     protected function getRedirectUrl(): string
     {
         return $this->getResource()::getUrl('create');
     }
-
-
 }

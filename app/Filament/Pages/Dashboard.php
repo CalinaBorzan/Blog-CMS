@@ -1,11 +1,11 @@
 <?php
 
 namespace App\Filament\Pages;
-use Illuminate\Database\Eloquent\Collection;
+use App\Filament\Widgets\TopTagsChart;
+use App\Filament\Widgets\UserPostsWidget;
 use Filament\Pages\Dashboard as BaseDashboard;
 
 use App\Models\Post;
-use Filament\Pages\Page;
 
 class Dashboard extends BaseDashboard
 {
@@ -17,17 +17,15 @@ class Dashboard extends BaseDashboard
   protected function getHeaderWidgets(): array
 {
     return [
-        \App\Filament\Widgets\UserPostsWidget::class,
-        \App\Filament\Widgets\TopTagsChart::class,
+        UserPostsWidget::class,
+        TopTagsChart::class,
 
     ];
 }
 
-
-
     public function mount(): void
     {
-        $this->posts = Post::where('user_id', auth()->id())->latest()->take(5)->get();
+        $this->posts = Post::where('user_id', auth()->id())->latest()->get();
     }
 
     public $posts = [];

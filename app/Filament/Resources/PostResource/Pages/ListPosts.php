@@ -1,7 +1,6 @@
 <?php
 
 namespace App\Filament\Resources\PostResource\Pages;
-use Illuminate\Support\Facades\Gate;
 
 use App\Filament\Resources\PostResource;
 use Filament\Actions;

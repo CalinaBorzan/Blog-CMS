@@ -1,58 +1,39 @@
 <?php
 
 namespace App\Filament\Resources;
-use App\Filament\Resources\PostCommentsRelationManagerResource\RelationManagers\CommentsRelationManager;
-use App\Filament\Resources\PostReactionsRelationManagerResource\RelationManagers\ReactionsRelationManager;
-use Filament\Forms\Components\Grid;
-use Filament\Forms\Components\Select;
-use Illuminate\Database\Eloquent\Model;
-use Filament\Tables\Columns\BadgeColumn;
 
-use App\Models\Category;
-use App\Filament\Resources\PostResource\Pages;
+use App\Filament\Resources\DraftPostResource\Pages;
+use App\Filament\Resources\DraftPostResource\RelationManagers;
 use App\Models\Post;
 use Filament\Forms;
+use Filament\Forms\Components\Grid;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
-use PHPUnit\Util\Filter;
 
-class PostResource extends Resource
+
+class DraftPostResource extends Resource
 {
     protected static ?string $model = Post::class;
-    protected static ?string $navigationIcon = 'heroicon-o-pencil';
 
+    protected static ?string $navigationIcon = 'heroicon-o-document-text';
 
-    public static function canViewAny(): bool
-    {
-        return auth()->user()->can('viewAny', Post::class);
-    }
+    protected static ?string $navigationGroup = 'Blog';
 
-    public static function canCreate(): bool
-    {
-        return auth()->user()->can('create', Post::class);
-    }
+    protected static ?string $navigationLabel = 'My Draft Posts';
 
-    public static function canEdit(Model $record): bool
-    {
-        return auth()->user()->can('update', $record);
-    }
-
-    public static function canDelete(Model $record): bool
-    {
-        return auth()->user()->can('delete', $record);
-    }
 
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
-            ->where('status', 'published')
-            ->withCount(['comments', 'reactions'])
-            ->with(['user','category','tags']);
+            ->where('status', 'draft')
+            ->where('user_id', auth()->id());
     }
+
 
     public static function form(Form $form): Form
     {
@@ -90,15 +71,16 @@ class PostResource extends Resource
                     ]),
 
                 Select::make('status')
-                  ->label('Status')
-                  ->options([
-                'draft'=>'Draft',
-                'published'=>'Published',
-            ])
-                 ->default('draft')
-                 ->required(),
+                    ->label('Status')
+                    ->options([
+                        'draft'=>'Draft',
+                        'published'=>'Published',
+                    ])
+                    ->default('draft')
+                    ->required(),
 
                 Forms\Components\RichEditor::make('content')
+
                     ->required(),
 
                 Forms\Components\Placeholder::make('author_name')
@@ -115,27 +97,19 @@ class PostResource extends Resource
                 Tables\Columns\TextColumn::make('created_at')->label('Created At')->dateTime(),
                 Tables\Columns\TextColumn::make('user.name')->label('Author')->searchable(),
                 Tables\Columns\TextColumn::make('category.name')->label('Category'),
-                BadgeColumn::make('status')->colors(['primary'=>'draft','success'=>'published']),
-                Tables\Columns\TextColumn::make('comments_count')
-                    ->label('Comments')
-                    ->counts('comments'),
-                Tables\Columns\TextColumn::make('reactions_count')
-                    ->label('Reactions')
-                    ->counts('reactions')
+                BadgeColumn::make('status')->colors(['primary'=>'draft','success'=>'published'])
 
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('category_id')->label('Category')->relationship('category', 'name'),
                 Tables\Filters\MultiSelectFilter::make('tags')->label('Tags')->relationship('tags', 'name'),
-
-
+                Tables\Filters\SelectFilter::make('status')->options(['draft'=>'Draft','published'=>'Published',]),
                 Tables\Filters\Filter::make('my_posts')
-
-                ->label('My Posts')
-                ->query(fn(Builder $query):Builder =>
-                         $query->where('user_id',auth()->id())
-                )
-                ->toggle()
+                    ->label('My Posts')
+                    ->query(fn(Builder $query):Builder =>
+                    $query->where('user_id',auth()->id())
+                    )
+                    ->toggle()
             ])
             ->actions([
                 Tables\Actions\EditAction::make()
@@ -149,23 +123,12 @@ class PostResource extends Resource
 
     }
 
-    public static function getRelations(): array
-    {
-        return [
-            CommentsRelationManager::class,
-            ReactionsRelationManager::class
-
-        ];
-    }
-
     public static function getPages(): array
     {
-
         return [
-            'index' => Pages\ListPosts::route('/'),
-            'create' => Pages\CreatePost::route('/create'),
-            'edit' => Pages\EditPost::route('/{record}/edit'),
-            'view'=>Pages\ViewPost::route('/{record}'),
+            'index' => Pages\ListDraftPosts::route('/'),
+            'edit' => Pages\EditDraftPost::route('/{record}/edit'),
+            'create' => Pages\CreateDraftPost::route('/create'),
         ];
     }
 }

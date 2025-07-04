@@ -3,11 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Post extends Model
 {
 
-    protected $fillable = ['title','content','user_id','category_id'];
+    protected $fillable = ['title','content','user_id','category_id','status'];
 
 
 
@@ -29,5 +30,15 @@ class Post extends Model
     public function isOwnedBy(User $user): bool
     {
         return $this->user_id==$user->id;
+    }
+
+    public function comments()
+    {
+        return $this->hasMany(Comment::class);
+    }
+
+    public function reactions()
+    {
+        return $this->hasMany(Reaction::class);
     }
 }
